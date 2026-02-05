@@ -6,6 +6,7 @@ WORKDIR /app
 RUN apt-get update -qq && \
     apt-get install -y --no-install-recommends \
     default-mysql-client \
+    vim \
     && rm -rf /var/lib/apt/lists/*
 
 # Install gems
