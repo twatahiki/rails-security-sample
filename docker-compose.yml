@@ -2,7 +2,7 @@ services:
   web:
     build: .
     ports:
-      - "3000:3000"
+      - "3099:3099"
     volumes:
       - .:/app
       - bundle:/usr/local/bundle
@@ -12,7 +12,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    command: bash -c "rm -f tmp/pids/server.pid && bundle exec rails server -b 0.0.0.0"
+    command: bash -c "rm -f tmp/pids/server.pid && bundle exec rails server -b 0.0.0.0 -p 3099"
     tty: true
     stdin_open: true
 
@@ -22,9 +22,10 @@ services:
       MYSQL_ROOT_PASSWORD: password
       MYSQL_DATABASE: security_dojo_development
     ports:
-      - "3306:3306"
+      - "3399:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+      - ./docker/mysql/my.cnf:/etc/mysql/conf.d/my.cnf
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-ppassword"]
       interval: 5s

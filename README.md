@@ -32,7 +32,7 @@ docker compose up -d
 docker compose exec web rails db:create db:migrate db:seed
 
 # 5. ブラウザでアクセス
-open http://localhost:3000
+open http://localhost:3099
 ```
 
 ## ブランチ構成
