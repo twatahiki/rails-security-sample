@@ -67,7 +67,7 @@ SELECT name, email, phone, address FROM users LIMIT 3;
 
 ```bash
 # credentialsを編集してキーを設定
-docker compose exec -e EDITOR=vi web rails credentials:edit
+docker compose exec -it -e EDITOR=vi web rails credentials:edit
 ```
 
 以下を追加:
@@ -143,6 +143,18 @@ class User < ApplicationRecord
 end
 ```
 
+**重要**: モデル変更後、データを再作成する必要があります（既存データは non-deterministic で暗号化されているため）。
+
+```bash
+# コンソールを終了してDBをリセット
+docker compose exec web rails db:reset
+```
+
+```bash
+# 再度コンソールに入る
+docker compose exec web rails console
+```
+
 ```ruby
 User.find_by(email: "user1@example.com")
 # => #<User ...>  # 検索できる！
@@ -160,20 +172,65 @@ User.find_by(email: "user1@example.com")
 - 鍵の漏洩時の対応
 - コンプライアンス要件
 
-### 実装例
+### 鍵ローテーションの仕組み
 
-```ruby
+```
+【ローテーション前】
+DB: [古い鍵で暗号化されたデータ]
+credentials: old_key
+
+【ローテーション中】
+DB: [古い鍵で暗号化されたデータ] ← まだ古い鍵
+credentials:
+  - new_key  ← 新しい鍵（書き込み用）
+  - old_key  ← 古い鍵（読み取りフォールバック用）
+
+この状態で Rails は:
+- 読み取り: new_key で試す → 失敗 → old_key で復号 ✓
+- 書き込み: new_key で暗号化
+
+【re_encrypt 実行後】
+DB: [新しい鍵で暗号化されたデータ] ← 全データが新しい鍵に
+credentials:
+  - new_key  ← これだけでOK
+```
+
+### 実装手順
+
+**Step 1**: 新しい鍵を生成
+
+```bash
+docker compose exec web rails db:encryption:init
+# 表示された primary_key をメモ
+```
+
+**Step 2**: credentials に新旧両方の鍵を設定
+
+```yaml
 # config/credentials.yml.enc
 active_record_encryption:
   primary_key:
-    - new_key_here  # 新しいキー（最初に試行）
-    - old_key_here  # 古いキー（フォールバック）
+    - <新しいキー> # 配列の最初 = 書き込み用
+    - <古いキー> # 配列の2番目 = 読み取りフォールバック用
+  deterministic_key: ...
+  key_derivation_salt: ...
 ```
 
+**Step 3**: 全データを新しい鍵で再暗号化
+
 ```bash
-# 全データを新しいキーで再暗号化
 docker compose exec web rails encryption:re_encrypt
 ```
+
+このコマンドは以下を実行します:
+
+1. 暗号化カラムを持つ全レコードを取得
+2. 各レコードを読み込み（古い鍵で復号）
+3. 同じ値で保存（新しい鍵で暗号化）
+
+**Step 4**: 古い鍵を削除（任意）
+
+全データが新しい鍵で暗号化されたら、古い鍵は不要になります。
 
 ---
 
