@@ -1,6 +1,6 @@
 # Rails Security Dojo
 
-ActiveRecord::Encryption を学ぶための社内勉強会用デモアプリケーション
+ActiveRecord::Encryption を学ぶための勉強会用デモアプリケーション
 
 ## 概要
 
