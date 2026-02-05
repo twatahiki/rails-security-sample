@@ -1,0 +1,37 @@
+diff --git a/app/models/user.rb b/app/models/user.rb
+index 1234567..abcdefg 100644
+--- a/app/models/user.rb
++++ b/app/models/user.rb
+@@ -2,8 +2,9 @@ class User < ApplicationRecord
+   has_many :inquiries, dependent: :destroy
+
+   # 個人情報を暗号化
+-  encrypts :email
+-  encrypts :phone
++  # email は検索可能にするため deterministic
++  encrypts :email, deterministic: true
++  encrypts :phone, deterministic: true
+   encrypts :address
+
+   validates :name, presence: true
+
+---
+# 適用方法:
+# 1. まず 02-add-encrypts.patch を適用済みであることを確認
+#
+# 2. このパッチを適用
+#    git apply docs/branch-diffs/03-deterministic-demo.patch
+#
+# 3. DBをリセット
+#    docker compose exec web rails db:reset
+#
+# 4. 検索が動作することを確認
+#    docker compose exec web rails console
+#
+#    # non-deterministic の時は検索できなかったが...
+#    User.find_by(email: "user1@example.com")
+#    # => #<User ...>  # 見つかる！
+#
+# 注意:
+# - deterministic は同じ入力に対して同じ暗号文を生成
+# - パターン分析に弱いため、本当に検索が必要なフィールドのみに使用

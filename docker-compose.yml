@@ -1,0 +1,36 @@
+services:
+  web:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - bundle:/usr/local/bundle
+    environment:
+      - DATABASE_URL=mysql2://root:password@db/security_dojo_development
+      - RAILS_ENV=development
+    depends_on:
+      db:
+        condition: service_healthy
+    command: bash -c "rm -f tmp/pids/server.pid && bundle exec rails server -b 0.0.0.0"
+    tty: true
+    stdin_open: true
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_ROOT_PASSWORD: password
+      MYSQL_DATABASE: security_dojo_development
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-ppassword"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  bundle:
+  mysql_data:

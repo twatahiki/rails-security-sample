@@ -1,0 +1,36 @@
+diff --git a/app/models/user.rb b/app/models/user.rb
+index 1234567..abcdefg 100644
+--- a/app/models/user.rb
++++ b/app/models/user.rb
+@@ -1,5 +1,10 @@
+ class User < ApplicationRecord
+   has_many :inquiries, dependent: :destroy
+
++  # 個人情報を暗号化
++  encrypts :email
++  encrypts :phone
++  encrypts :address
++
+   validates :name, presence: true
+   validates :email, presence: true, uniqueness: true
+ end
+
+---
+# 適用方法:
+# 1. まず 01-setup-encryption.patch を適用済みであることを確認
+#
+# 2. このパッチを適用
+#    git apply docs/branch-diffs/02-add-encrypts.patch
+#
+# 3. DBをリセット（暗号化されたデータで再作成）
+#    docker compose exec web rails db:reset
+#
+# 4. 確認
+#    # Railsコンソール
+#    docker compose exec web rails console
+#    User.first.email  # => 復号された値
+#
+#    # MySQLで直接確認
+#    docker compose exec db mysql -u root -ppassword security_dojo_development \
+#      -e "SELECT email FROM users LIMIT 1;"
+#    # => 暗号化された JSON 文字列

@@ -1,0 +1,52 @@
+diff --git a/lib/tasks/re_encrypt.rake b/lib/tasks/re_encrypt.rake
+new file mode 100644
+index 0000000..1234567
+--- /dev/null
++++ b/lib/tasks/re_encrypt.rake
+@@ -0,0 +1,33 @@
++namespace :encryption do
++  desc "Re-encrypt all encrypted attributes with the current primary key"
++  task re_encrypt: :environment do
++    puts "Starting re-encryption..."
++
++    # User モデル
++    User.find_each do |user|
++      user.encrypt
++      print "."
++    end
++    puts "\nUsers: done"
++
++    # Inquiry モデル（暗号化フィールドがあれば）
++    # Inquiry.find_each do |inquiry|
++    #   inquiry.encrypt
++    #   print "."
++    # end
++    # puts "\nInquiries: done"
++
++    puts "Re-encryption completed!"
++  end
++end
+
+---
+# 鍵ローテーションの手順:
+#
+# 1. 新しいキーを生成
+#    docker compose exec web rails db:encryption:init
+#
+# 2. credentials を編集して、新しいキーを追加（古いキーは残す）
+#    docker compose exec -e EDITOR=vi web rails credentials:edit
+#
+#    active_record_encryption:
+#      primary_key:
+#        - <新しいキー>    # 新しいキーを先頭に
+#        - <古いキー>      # 古いキーはフォールバック用に残す
+#      deterministic_key: <そのまま>
+#      key_derivation_salt: <そのまま>
+#
+# 3. このパッチを適用
+#    git apply docs/branch-diffs/04-key-rotation.patch
+#
+# 4. 全データを新しいキーで再暗号化
+#    docker compose exec web rails encryption:re_encrypt
+#
+# 5. 古いキーを削除（十分なテスト後）

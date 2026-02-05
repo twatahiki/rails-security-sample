@@ -1,0 +1,33 @@
+diff --git a/config/application.rb b/config/application.rb
+index 1234567..abcdefg 100644
+--- a/config/application.rb
++++ b/config/application.rb
+@@ -10,5 +10,11 @@ module SecurityDojo
+     # Application configuration can go into files in config/initializers
+     # -- all .rb files in that directory are automatically loaded after loading
+     # the framework and any gems in your application.
++
++    # ActiveRecord::Encryption の設定
++    # 本番環境では credentials から読み込む
++    config.active_record.encryption.primary_key = Rails.application.credentials.dig(:active_record_encryption, :primary_key)
++    config.active_record.encryption.deterministic_key = Rails.application.credentials.dig(:active_record_encryption, :deterministic_key)
++    config.active_record.encryption.key_derivation_salt = Rails.application.credentials.dig(:active_record_encryption, :key_derivation_salt)
+   end
+ end
+
+---
+# 適用方法:
+# 1. このパッチを適用
+#    git apply docs/branch-diffs/01-setup-encryption.patch
+#
+# 2. 暗号化キーを生成
+#    docker compose exec web rails db:encryption:init
+#
+# 3. credentials に追加
+#    docker compose exec -e EDITOR=vi web rails credentials:edit
+#
+#    以下を追加:
+#    active_record_encryption:
+#      primary_key: <生成されたキー>
+#      deterministic_key: <生成されたキー>
+#      key_derivation_salt: <生成されたキー>

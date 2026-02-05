@@ -1,0 +1,17 @@
+# MySQL configuration with DATABASE_URL support
+default: &default
+  adapter: mysql2
+  encoding: utf8mb4
+  max_connections: <%= ENV.fetch("RAILS_MAX_THREADS") { 5 } %>
+
+development:
+  <<: *default
+  url: <%= ENV.fetch("DATABASE_URL", "mysql2://root:password@db/security_dojo_development") %>
+
+test:
+  <<: *default
+  url: <%= ENV.fetch("DATABASE_URL_TEST", "mysql2://root:password@db/security_dojo_test") %>
+
+production:
+  <<: *default
+  url: <%= ENV["DATABASE_URL"] %>
